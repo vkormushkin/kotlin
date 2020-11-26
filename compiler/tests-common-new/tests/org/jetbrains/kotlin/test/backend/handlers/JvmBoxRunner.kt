@@ -50,13 +50,13 @@ class JvmBoxRunner(
 
     private fun callBoxMethodAndCheckResult(
         classLoader: URLClassLoader,
-        clazz: Class<*>?,
+        @Suppress("UNUSED_PARAMETER") clazz: Class<*>?,
         method: Method,
         unexpectedBehaviour: Boolean
     ) {
         val result = if (BOX_IN_SEPARATE_PROCESS_PORT != null) {
             TODO()
-//            result = invokeBoxInSeparateProcess(classLoader, aClass)
+//            result = invokeBoxInSeparateProcess(classLoader, clazz)
         } else {
             val savedClassLoader = Thread.currentThread().contextClassLoader
             if (savedClassLoader !== classLoader) {
