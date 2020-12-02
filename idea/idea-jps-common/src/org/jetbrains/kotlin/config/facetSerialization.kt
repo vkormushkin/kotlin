@@ -408,35 +408,10 @@ fun Element.dropVersionsIfNecessary(settings: CommonCompilerArguments) {
     }
 }
 
-// Special treatment of v2 may be dropped after transition to IDEA 172
-private fun KotlinFacetSettings.writeV2Config(element: Element) {
-    writeLatestConfig(element)
-    element.getChild("compilerArguments")?.let {
-        it.getOption("coroutinesState")?.detach()
-        val coroutineOption = when (compilerArguments?.coroutinesState) {
-            CommonCompilerArguments.ENABLE -> "coroutinesEnable"
-            CommonCompilerArguments.WARN -> "coroutinesWarn"
-            CommonCompilerArguments.ERROR -> "coroutinesError"
-            else -> null
-        }
-        if (coroutineOption != null) {
-            Element("option").apply {
-                setAttribute("name", coroutineOption)
-                setAttribute("value", "true")
-                it.addContent(this)
-            }
-        }
-    }
-}
-
 fun KotlinFacetSettings.serializeFacetSettings(element: Element) {
     val versionToWrite = if (version == 2) version else KotlinFacetSettings.CURRENT_VERSION
     element.setAttribute("version", versionToWrite.toString())
-    if (versionToWrite == 2) {
-        writeV2Config(element)
-    } else {
-        writeLatestConfig(element)
-    }
+    writeLatestConfig(element)
 }
 
 private fun TargetPlatform.serializeComponentPlatforms(): String {

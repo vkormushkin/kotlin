@@ -226,8 +226,7 @@ fun KotlinFacet.noVersionAutoAdvance() {
 val commonUIExposedFields = listOf(
     CommonCompilerArguments::languageVersion.name,
     CommonCompilerArguments::apiVersion.name,
-    CommonCompilerArguments::suppressWarnings.name,
-    CommonCompilerArguments::coroutinesState.name
+    CommonCompilerArguments::suppressWarnings.name
 )
 private val commonUIHiddenFields = listOf(
     CommonCompilerArguments::pluginClasspaths.name,
