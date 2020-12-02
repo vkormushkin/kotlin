@@ -153,18 +153,16 @@ fun Module.removeKotlinFacet(
 //method used for non-mpp modules
 fun KotlinFacet.configureFacet(
     compilerVersion: String?,
-    coroutineSupport: LanguageFeature.State,
     platform: TargetPlatform?,
     modelsProvider: IdeModifiableModelsProvider
 ) {
-    configureFacet(compilerVersion, coroutineSupport, platform, modelsProvider, false, emptyList(), emptyList())
+    configureFacet(compilerVersion, platform, modelsProvider, false, emptyList(), emptyList())
 }
 
 fun KotlinFacet.configureFacet(
     compilerVersion: String?,
-    coroutineSupport: LanguageFeature.State,
-    platform: TargetPlatform?, // if null, detect by module dependencies
-    modelsProvider: IdeModifiableModelsProvider,
+    platform: TargetPlatform?,
+    modelsProvider: IdeModifiableModelsProvider, // if null, detect by module dependencies
     hmppEnabled: Boolean,
     pureKotlinSourceFolders: List<String>,
     dependsOnList: List<String>
@@ -187,7 +185,6 @@ fun KotlinFacet.configureFacet(
         if (languageLevel != null && apiLevel != null && apiLevel > languageLevel) {
             this.apiLevel = languageLevel
         }
-        this.coroutineSupport = if (languageLevel != null && languageLevel < LanguageVersion.KOTLIN_1_3) coroutineSupport else null
         this.pureKotlinSourceFolders = pureKotlinSourceFolders
     }
 
