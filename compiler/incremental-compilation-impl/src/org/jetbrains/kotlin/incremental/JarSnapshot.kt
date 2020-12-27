@@ -63,7 +63,9 @@ class JarSnapshot(val protos: MutableMap<FqName, ProtoData>) {
                                     val stringTable = StringTableImpl()
                                     //TODO dirty hack
                                     repeat(nameResolver.strings.size) {
-                                        stringTable.getStringIndex(nameResolver.getString(it))
+                                        val string = nameResolver.getString(it)
+                                        stringTable.getStringIndex(string)
+                                        stringTable.getQualifiedClassNameIndex(string, nameResolver.isLocalClassName(it))
                                     }
                                     stringTable.buildProto()
                                 }

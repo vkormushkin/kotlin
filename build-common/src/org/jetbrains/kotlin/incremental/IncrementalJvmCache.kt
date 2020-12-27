@@ -179,7 +179,7 @@ open class IncrementalJvmCache(
         sourceToClassesMap.add(source, jvmClassName)
         val (proto, nameResolver) = serializedJavaClass.toProtoData()
         addToClassStorage(proto, nameResolver, source)
-
+//        collector.addJavaProto(ClassProtoData(proto, nameResolver))
         dirtyOutputClassesMap.notDirty(jvmClassName)
     }
 

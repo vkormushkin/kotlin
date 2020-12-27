@@ -27,6 +27,7 @@ class ChangesCollector {
     private val removedMembers = hashMapOf<FqName, MutableSet<String>>()
     private val changedMembers = hashMapOf<FqName, MutableSet<String>>()
     private val areSubclassesAffected = hashMapOf<FqName, Boolean>()
+
     //TODO for test only: ProtoData or ProtoBuf
     private val storage = hashMapOf<FqName, ProtoData>()
     private val removed = ArrayList<FqName>()
@@ -72,7 +73,7 @@ class ChangesCollector {
     }
 
     private fun <T, R> MutableMap<T, MutableSet<R>>.getSet(key: T) =
-            getOrPut(key) { HashSet() }
+        getOrPut(key) { HashSet() }
 
     private fun collectChangedMember(scope: FqName, name: String) {
         changedMembers.getSet(scope).add(name)
@@ -163,7 +164,7 @@ class ChangesCollector {
     }
 
     fun <T> T.getNonPrivateNames(nameResolver: NameResolver, vararg members: T.() -> List<MessageLite>) =
-            members.flatMap { this.it().filterNot { it.isPrivate }.names(nameResolver) }.toSet()
+        members.flatMap { this.it().filterNot { it.isPrivate }.names(nameResolver) }.toSet()
 
     private fun ProtoData.collectAll(isRemoved: Boolean, collectAllMembersForNewClass: Boolean = false) =
         when (this) {
@@ -173,16 +174,15 @@ class ChangesCollector {
 
     private fun PackagePartProtoData.collectAllFromPackage(isRemoved: Boolean) {
         val memberNames =
-                proto.getNonPrivateNames(
-                        nameResolver,
-                        ProtoBuf.Package::getFunctionList,
-                        ProtoBuf.Package::getPropertyList
-                )
+            proto.getNonPrivateNames(
+                nameResolver,
+                ProtoBuf.Package::getFunctionList,
+                ProtoBuf.Package::getPropertyList
+            )
 
         if (isRemoved) {
             collectRemovedMembers(packageFqName, memberNames)
-        }
-        else {
+        } else {
             collectChangedMembers(packageFqName, memberNames)
         }
     }
@@ -197,8 +197,7 @@ class ChangesCollector {
             val collectMember = if (isRemoved) this@ChangesCollector::collectRemovedMember else this@ChangesCollector::collectChangedMember
             collectMember(classFqName.parent(), classFqName.shortName().asString())
             memberNames.forEach { collectMember(classFqName, it) }
-        }
-        else {
+        } else {
             if (!isRemoved && collectAllMembersForNewClass) {
                 val memberNames = getNonPrivateMemberNames()
                 memberNames.forEach { this@ChangesCollector.collectChangedMember(classFqName, it) }
@@ -215,8 +214,7 @@ class ChangesCollector {
 
         if (oldValue != null && newValue == null) {
             collectRemovedMember(scope, name)
-        }
-        else if (oldValue != newValue) {
+        } else if (oldValue != newValue) {
             collectChangedMember(scope, name)
         }
     }

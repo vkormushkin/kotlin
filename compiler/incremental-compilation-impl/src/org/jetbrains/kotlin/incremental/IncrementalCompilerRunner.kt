@@ -305,6 +305,7 @@ abstract class IncrementalCompilerRunner<
             if (compilationMode is CompilationMode.Rebuild) {
                 if (withSnapshot) {
                     jarSnapshot.protos.putAll(changesCollector.protoDataChanges())
+//                    jarSnapshot.protos.putAll(changesCollector.javaProtoData())
                 }
                 break
             }
