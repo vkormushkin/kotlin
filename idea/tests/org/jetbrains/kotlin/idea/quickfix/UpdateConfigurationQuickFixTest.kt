@@ -167,7 +167,6 @@ class UpdateConfigurationQuickFixTest : KotlinLightPlatformCodeInsightFixtureTes
         KotlinCommonCompilerArgumentsHolder.getInstance(project).update {
             languageVersion = version.versionString
             apiVersion = version.versionString
-            coroutinesState = DEFAULT
         }
     }
 

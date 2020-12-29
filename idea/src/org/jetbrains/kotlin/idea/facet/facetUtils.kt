@@ -77,7 +77,8 @@ fun KotlinFacetSettings.initializeIfNeeded(
     if (compilerArguments == null) {
         val targetPlatform = platform ?: getDefaultTargetPlatform(module, rootModel)
         compilerArguments = targetPlatform.createArguments {
-            targetPlatform.idePlatformKind.tooling.compilerArgumentsForProject(module.project)?.let { mergeBeans(it, this) }
+            val args = targetPlatform.idePlatformKind.tooling.compilerArgumentsForProject(module.project)
+            args?.let { mergeBeans(it, this) }
             mergeBeans(commonArguments, this)
         }
         this.targetPlatform = targetPlatform
@@ -206,11 +207,10 @@ fun Module.externalSystemNativeMainRunTasks() = externalSystemRunTasks().filterI
 )
 fun KotlinFacet.configureFacet(
     compilerVersion: String?,
-    coroutineSupport: LanguageFeature.State,
     platform: IdePlatform<*, *>,
     modelsProvider: IdeModifiableModelsProvider
 ) {
-    configureFacet(compilerVersion, coroutineSupport, platform.toNewPlatform(), modelsProvider)
+    configureFacet(compilerVersion, platform.toNewPlatform(), modelsProvider)
 }
 
 
