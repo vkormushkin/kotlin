@@ -185,7 +185,7 @@ extra["versions.kotlinx-collections-immutable"] = immutablesVersion
 extra["versions.kotlinx-collections-immutable-jvm"] = immutablesVersion
 
 // NOTE: please, also change KTOR_NAME in pathUtil.kt and all versions in corresponding jar names in daemon tests.
-extra["versions.ktor-network"] = "1.0.1"
+extra["versions.ktor-network"] = "1.5.0"
 
 if (!project.hasProperty("versions.kotlin-native")) {
     extra["versions.kotlin-native"] = "1.4.30-dev-17395"
@@ -408,7 +408,6 @@ allprojects {
         jcenter()
         maven(protobufRepo)
         maven(intellijRepo)
-        maven("https://dl.bintray.com/kotlin/ktor")
         maven("https://kotlin.bintray.com/kotlin-dependencies")
         maven("https://jetbrains.bintray.com/intellij-third-party-dependencies")
         maven("https://dl.google.com/dl/android/maven2")

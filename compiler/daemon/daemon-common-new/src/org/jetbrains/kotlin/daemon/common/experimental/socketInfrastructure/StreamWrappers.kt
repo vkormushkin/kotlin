@@ -6,6 +6,8 @@
 package org.jetbrains.kotlin.daemon.common.experimental.socketInfrastructure
 
 import io.ktor.network.sockets.*
+import io.ktor.utils.io.*
+import io.ktor.utils.io.core.*
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -13,11 +15,12 @@ import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.channels.consumeEach
-import kotlinx.coroutines.io.*
-import kotlinx.io.core.readBytes
 import java.io.*
 import java.nio.ByteBuffer
 import java.util.logging.Logger
+import kotlin.io.use
+import kotlin.text.String
+import kotlin.text.toByteArray
 
 private val DEFAULT_BYTE_ARRAY = byteArrayOf(0, 0, 0, 0)
 
