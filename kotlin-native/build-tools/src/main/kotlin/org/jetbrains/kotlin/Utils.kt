@@ -23,6 +23,35 @@ import java.util.Base64
 import org.jetbrains.report.json.*
 import java.nio.file.Path
 import org.jetbrains.kotlin.konan.file.File as KFile
+import org.gradle.nativeplatform.toolchain.internal.*
+import org.gradle.nativeplatform.toolchain.plugins.ClangCompilerPlugin
+import org.gradle.api.Incubating
+import org.gradle.api.NamedDomainObjectFactory
+import org.gradle.api.NonNullApi
+import org.gradle.api.Plugin
+import org.gradle.api.internal.file.FileResolver
+import org.gradle.api.internal.plugins.PotentialPlugin
+import org.gradle.internal.operations.BuildOperationExecutor
+import org.gradle.internal.os.OperatingSystem
+import org.gradle.internal.reflect.Instantiator
+import org.gradle.internal.service.ServiceRegistry
+import org.gradle.internal.work.WorkerLeaseService
+import org.gradle.model.Defaults
+import org.gradle.model.RuleSource
+import org.gradle.nativeplatform.internal.CompilerOutputFileNamingSchemeFactory
+import org.gradle.nativeplatform.platform.internal.NativePlatformInternal
+import org.gradle.nativeplatform.plugins.NativeComponentPlugin
+import org.gradle.nativeplatform.toolchain.Clang
+import org.gradle.nativeplatform.toolchain.internal.clang.ClangToolChain
+import org.gradle.nativeplatform.toolchain.internal.gcc.AbstractGccCompatibleToolChain
+import org.gradle.nativeplatform.toolchain.internal.gcc.DefaultGccPlatformToolChain
+import org.gradle.nativeplatform.toolchain.internal.gcc.metadata.SystemLibraryDiscovery
+import org.gradle.nativeplatform.toolchain.internal.metadata.CompilerMetaDataProviderFactory
+import org.gradle.nativeplatform.toolchain.internal.tools.CommandLineToolSearchResult
+import org.gradle.nativeplatform.toolchain.internal.tools.GccCommandLineToolConfigurationInternal
+import org.gradle.nativeplatform.toolchain.internal.tools.ToolSearchPath
+import org.gradle.process.internal.ExecActionFactory
+import java.io.ByteArrayOutputStream
 
 //region Project properties.
 
@@ -57,6 +86,19 @@ val validPropertiesNames = listOf("kotlin.native.home",
                                   "org.jetbrains.kotlin.native.home",
                                   "konan.home")
 
+val Project.macosHostPlatformSdk:String?
+    get () = if (HostManager.host.family  == Family.OSX) {
+        val out = ByteArrayOutputStream()
+        project.exec {
+            executable("xcrun")
+            args("--show-sdk-path")
+            this.standardOutput = out
+        }
+        String(out.toByteArray()).trim()
+    }
+    else
+        null
+
 val Project.clangPath: String
     get() {
         this.logger.warn("${platformManager.hostPlatform.clang.binDir}: exists: ${File(platformManager.hostPlatform.clang.binDir).exists()}")
@@ -90,6 +132,104 @@ fun Project.configureNativePluginTask(task:Task) {
     task.dependsOn(dependancies)
     task.mustRunAfter(dependancies)
 }
+
+class KonanClangToolChain(
+    name: String,
+    buildOperationExecutor: BuildOperationExecutor,
+    operatingSystem: OperatingSystem,
+    fileResolver: FileResolver,
+    execActionFactory: ExecActionFactory,
+    compilerOutputFileNamingSchemeFactory: CompilerOutputFileNamingSchemeFactory,
+    metaDataProviderFactory: CompilerMetaDataProviderFactory,
+    standardLibraryDiscovery: SystemLibraryDiscovery,
+    instantiator: Instantiator,
+    workerLeaseService: WorkerLeaseService
+) :
+    AbstractGccCompatibleToolChain(
+        name,
+        buildOperationExecutor,
+        operatingSystem,
+        fileResolver,
+        execActionFactory,
+        compilerOutputFileNamingSchemeFactory,
+        metaDataProviderFactory.clang(),
+        standardLibraryDiscovery,
+        instantiator,
+        workerLeaseService
+    ),
+    Clang {
+    override fun configureDefaultTools(toolChain: DefaultGccPlatformToolChain) {
+        toolChain.linker.executable = "clang++"
+        toolChain.getcCompiler().executable = "clang"
+        toolChain.cppCompiler.executable = "clang++"
+        toolChain.objcCompiler.executable = "clang"
+        toolChain.objcppCompiler.executable = "clang++"
+        toolChain.assembler.executable = "clang"
+    }
+
+    override fun getTypeName(): String {
+        return "Clang"
+    }
+
+    companion object {
+        const val DEFAULT_NAME = "konanClang"
+    }
+
+    override fun select(sourceLanguage: NativeLanguage, targetMachine: NativePlatformInternal): PlatformToolProvider {
+        println("KonanClangToolChain:select($sourceLanguage, $targetMachine)")
+        return super.select(sourceLanguage, targetMachine)
+    }
+}
+
+@Incubating
+open class KonanClangToolChainPlugin:PotentialPlugin<Project> {
+
+    override fun asClass():Class<out Project> = KonanClangToolChainPlugin::class.java as Class<out Project>
+    override fun getType() = PotentialPlugin.Type.PURE_RULE_SOURCE_CLASS
+    override fun isHasRules() = true
+    override fun isImperative() = false
+
+    class Rules:RuleSource() {
+       companion object {
+           fun addToolChain(toolChainRegistry: NativeToolChainRegistryInternal, serviceRegistry:ServiceRegistry) {
+               val fileResolver: FileResolver = serviceRegistry.get(FileResolver::class.java)
+               val execActionFactory: ExecActionFactory = serviceRegistry.get(ExecActionFactory::class.java)
+               val compilerOutputFileNamingSchemeFactory: CompilerOutputFileNamingSchemeFactory = serviceRegistry.get(
+                   CompilerOutputFileNamingSchemeFactory::class.java
+               )
+               val instantiator: Instantiator = serviceRegistry.get(Instantiator::class.java)
+               val buildOperationExecutor: BuildOperationExecutor = serviceRegistry.get(BuildOperationExecutor::class.java)
+               val metaDataProviderFactory: CompilerMetaDataProviderFactory =
+                   serviceRegistry.get(CompilerMetaDataProviderFactory::class.java)
+               val standardLibraryDiscovery: SystemLibraryDiscovery = serviceRegistry.get(SystemLibraryDiscovery::class.java)
+               val workerLeaseService: WorkerLeaseService = serviceRegistry.get(WorkerLeaseService::class.java)
+
+               toolChainRegistry.registerFactory(Clang::class.java, object : NamedDomainObjectFactory<Clang?> {
+                   override fun create(name: String): Clang {
+                       return instantiator.newInstance(
+                           KonanClangToolChain::class.java,
+                           name,
+                           buildOperationExecutor,
+                           OperatingSystem.current(),
+                           fileResolver,
+                           execActionFactory,
+                           compilerOutputFileNamingSchemeFactory,
+                           metaDataProviderFactory,
+                           standardLibraryDiscovery,
+                           instantiator,
+                           workerLeaseService
+                       )
+                   }
+               })
+               toolChainRegistry.registerDefaultToolChain("clangKonan", Clang::class.java)
+           }
+       }
+    }
+}
+
+//fun Project.configureToolchain(registry: NativeToolChainRegistryInternal) {
+//    KonanClangToolChainPlugin().apply(project)
+//}
 
 val Project.kotlinNativeDist
     get() = rootProject.file(validPropertiesNames.firstOrNull{ hasProperty(it) }?.let{ findProperty(it) } ?: "dist")

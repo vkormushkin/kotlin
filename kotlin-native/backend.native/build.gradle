@@ -82,13 +82,13 @@ task renamePackage {
 kotlinNativeInterop {
     llvm {
 
-        dependsOn ":kotlin-native:llvmDebugInfoC:debugInfoStaticLibrary"
-        dependsOn ":kotlin-native:llvmCoverageMappingC:coverageMappingStaticLibrary"
+        dependsOn ":kotlin-native:llvmDebugInfoC:libdebugInfo${if (HostManager.hostIsMingw) ".lib" else ".a"}"
+        dependsOn ":kotlin-native:llvmCoverageMappingC:libcoverageMapping${if (HostManager.hostIsMingw) ".lib" else ".a"}"
         defFile 'llvm.def'
         if (!project.parent.convention.plugins.platformInfo.isWindows())
             compilerOpts "-fPIC"
         compilerOpts "-I$llvmDir/include", "-I${rootProject.project(':kotlin-native:llvmDebugInfoC').projectDir}/src/main/include", "-I${rootProject.project(':kotlin-native:llvmCoverageMappingC').projectDir}/src/main/include"
-        linkerOpts "-L$llvmDir/lib", "-L${rootProject.project(':kotlin-native:llvmDebugInfoC').buildDir}/libs/debugInfo/static", "-L${rootProject.project(':kotlin-native:llvmCoverageMappingC').buildDir}/libs/coverageMapping/static"
+        linkerOpts "-L$llvmDir/lib", "-L${rootProject.project(':kotlin-native:llvmDebugInfoC').buildDir}", "-L${rootProject.project(':kotlin-native:llvmCoverageMappingC').buildDir}"
     }
 
     hash { // TODO: copy-pasted from ':common:compileHash'

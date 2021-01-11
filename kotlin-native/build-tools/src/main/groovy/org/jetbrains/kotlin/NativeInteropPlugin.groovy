@@ -189,6 +189,7 @@ class NamedNativeInteropConfig implements Named {
 
             project.dependencies {
                 add interopStubs.getCompileConfigurationName(), project(path: ':kotlin-native:Interop:Runtime')
+                add interopStubs.getCompileConfigurationName(), project(path: ":kotlin-stdlib")
             }
 
             this.configuration.extendsFrom project.configurations[interopStubs.runtimeConfigurationName]
@@ -197,6 +198,8 @@ class NamedNativeInteropConfig implements Named {
 
         genTask.configure {
             dependsOn ":kotlin-native:dependencies:update"
+            dependsOn ":kotlin-native:Interop:Indexer:nativelibs"
+            dependsOn ":kotlin-native:Interop:Runtime:nativelibs"
             classpath = project.configurations.interopStubGenerator
             main = "org.jetbrains.kotlin.native.interop.gen.jvm.MainKt"
             jvmArgs '-ea'
