@@ -23,6 +23,7 @@ import org.jetbrains.kotlin.context.withModule
 import org.jetbrains.kotlin.context.withProject
 import org.jetbrains.kotlin.descriptors.ModuleDescriptor
 import org.jetbrains.kotlin.diagnostics.Diagnostic
+import org.jetbrains.kotlin.diagnostics.DiagnosticSink
 import org.jetbrains.kotlin.diagnostics.DiagnosticUtils
 import org.jetbrains.kotlin.frontend.di.createContainerForLazyBodyResolve
 import org.jetbrains.kotlin.idea.caches.project.getModuleInfo
@@ -88,13 +89,13 @@ internal class PerFileAnalysisCache(val file: KtFile, componentProvider: Compone
         return null
     }
 
-    internal fun getAnalysisResults(element: KtElement, callback: ((Diagnostic) -> Unit)? = null): AnalysisResult {
+    internal fun getAnalysisResults(element: KtElement, callback: DiagnosticSink.DiagnosticsCallback? = null): AnalysisResult {
         check(element)
 
         val analyzableParent = KotlinResolveDataProvider.findAnalyzableParent(element) ?: return AnalysisResult.EMPTY
 
-        fun handleResult(result: AnalysisResult, callback: ((Diagnostic) -> Unit)?): AnalysisResult {
-            callback?.let { result.bindingContext.diagnostics.forEach(it::invoke) }
+        fun handleResult(result: AnalysisResult, callback: DiagnosticSink.DiagnosticsCallback?): AnalysisResult {
+            callback?.let { result.bindingContext.diagnostics.forEach(it::callback) }
             return result
         }
 
@@ -115,7 +116,7 @@ internal class PerFileAnalysisCache(val file: KtFile, componentProvider: Compone
             val localDiagnostics = mutableSetOf<Diagnostic>()
             val localCallback = if (callback != null) { d: Diagnostic ->
                 localDiagnostics.add(d)
-                callback(d)
+                callback.callback(d)
             } else null
 
             // step 3: perform analyze of analyzableParent as nothing has been cached yet
@@ -123,7 +124,7 @@ internal class PerFileAnalysisCache(val file: KtFile, componentProvider: Compone
 
             // some of diagnostics could be not handled with a callback - send out the rest
             callback?.let { c ->
-                result.bindingContext.diagnostics.filterNot { it in localDiagnostics }.forEach(c)
+                result.bindingContext.diagnostics.filterNot { it in localDiagnostics }.forEach(c::callback)
             }
             cache[analyzableParent] = result
 
@@ -131,7 +132,7 @@ internal class PerFileAnalysisCache(val file: KtFile, componentProvider: Compone
         }
     }
 
-    private fun getIncrementalAnalysisResult(callback: ((Diagnostic) -> Unit)?): AnalysisResult? {
+    private fun getIncrementalAnalysisResult(callback: DiagnosticSink.DiagnosticsCallback?): AnalysisResult? {
         updateFileResultFromCache()
 
         val inBlockModifications = file.inBlockModifications
@@ -168,7 +169,7 @@ internal class PerFileAnalysisCache(val file: KtFile, componentProvider: Compone
                                 )
                             }
 
-                        callback?.let { trace.parentDiagnosticsApartElement.forEach(it) }
+                        callback?.let { trace.parentDiagnosticsApartElement.forEach(it::callback) }
 
                         val newResult = analyze(inBlockModification, trace, callback)
                         analysisResult = wrapResult(result, newResult, trace)
@@ -246,7 +247,7 @@ internal class PerFileAnalysisCache(val file: KtFile, componentProvider: Compone
     private fun analyze(
         analyzableElement: KtElement,
         bindingTrace: BindingTrace?,
-        callback: ((Diagnostic) -> Unit)?
+        callback: DiagnosticSink.DiagnosticsCallback?
     ): AnalysisResult {
         ProgressIndicatorProvider.checkCanceled()
 
@@ -437,7 +438,7 @@ private object KotlinResolveDataProvider {
         bodyResolveCache: BodyResolveCache,
         analyzableElement: KtElement,
         bindingTrace: BindingTrace?,
-        callback: ((Diagnostic) -> Unit)?
+        callback: DiagnosticSink.DiagnosticsCallback?
     ): AnalysisResult {
         try {
             if (analyzableElement is KtCodeFragment) {
