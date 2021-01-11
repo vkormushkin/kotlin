@@ -48,14 +48,6 @@ sealed class TargetPlatformKind<out Version : TargetPlatformVersion>(
     )
 }
 
-object CoroutineSupport {
-    fun getCompilerArgument(state: LanguageFeature.State): String = when (state) {
-        LanguageFeature.State.ENABLED -> "enable"
-        LanguageFeature.State.ENABLED_WITH_WARNING -> "warn"
-        LanguageFeature.State.ENABLED_WITH_ERROR, LanguageFeature.State.DISABLED -> "error"
-    }
-}
-
 sealed class VersionView : DescriptionAware {
     abstract val version: LanguageVersion
 
