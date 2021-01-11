@@ -162,8 +162,8 @@ fun KotlinFacet.configureFacet(
 
 fun KotlinFacet.configureFacet(
     compilerVersion: String?,
-    platform: TargetPlatform?,
-    modelsProvider: IdeModifiableModelsProvider, // if null, detect by module dependencies
+    platform: TargetPlatform?, // if null, detect by module dependencies
+    modelsProvider: IdeModifiableModelsProvider,
     hmppEnabled: Boolean,
     pureKotlinSourceFolders: List<String>,
     dependsOnList: List<String>
