@@ -402,7 +402,10 @@ fun Element.dropVersionsIfNecessary(settings: CommonCompilerArguments) {
 }
 
 fun KotlinFacetSettings.serializeFacetSettings(element: Element) {
-    val versionToWrite = if (version == 2) version else KotlinFacetSettings.CURRENT_VERSION
+    val versionToWrite = when (version) {
+        2, 3 -> version
+        else -> KotlinFacetSettings.CURRENT_VERSION
+    }
     element.setAttribute("version", versionToWrite.toString())
     writeLatestConfig(element)
 }
