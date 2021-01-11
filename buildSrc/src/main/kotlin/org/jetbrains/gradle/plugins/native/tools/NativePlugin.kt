@@ -56,6 +56,7 @@ open class SourceSet(val sourceSets: SourceSets,
                 sourceSets.project.tasks.create(it.second.name) {
                     if(initialSourceSet.rule != null)
                         dependsOn(it.first.name)
+                        dependsOn(":kotlin-native:dependencies:update")
                     doLast {
                         val toolConfiguration = object : ToolPattern{
                             var tool:String = ""

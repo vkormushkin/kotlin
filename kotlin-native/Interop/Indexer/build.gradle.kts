@@ -43,6 +43,9 @@ val cflags = mutableListOf( "-I$llvmDir/include",
         "-I${project(":kotlin-native:libclangext").projectDir.absolutePath}/src/main/include")
 
 val ldflags = mutableListOf("$llvmDir/$libclang", "-L${libclangextDir.absolutePath}", "-lclangext")
+if (HostManager.hostIsMac) {
+    ldflags.addAll(listOf("-L${project.macosHostPlatformSdk}/usr/lib", "-lSystem"))
+}
 
 if (libclangextIsEnabled) {
     assert(HostManager.hostIsMac)
@@ -123,10 +126,10 @@ native {
 
     target("libclangstubs.$solib", *objSet) {
         tool("${platformManager.hostPlatform.clang.binDir}/clang++")
-        flags("-shared",
-              "-L${project.macosHostPlatformSdk!!}/usr/lib", "-lSystem",
-              *ldflags.toTypedArray(),
-              "-o", ruleOut(), *ruleInAll())
+        flags(
+            "-shared",
+            *ldflags.toTypedArray(),
+            "-o", ruleOut(), *ruleInAll())
     }
 }
 

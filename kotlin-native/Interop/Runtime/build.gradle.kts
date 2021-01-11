@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 import org.jetbrains.kotlin.*
+import org.jetbrains.kotlin.konan.target.HostManager
 import java.io.ByteArrayOutputStream
 
 val kotlinVersion = project.bootstrapKotlinVersion
@@ -60,10 +61,14 @@ native {
     }
     val objSet = sourceSets["callbacks"]!!.transform(".c" to ".$obj")
 
+    val ldflags = mutableListOf<String>()
+    if (org.jetbrains.kotlin.konan.target.HostManager.hostIsMac) {
+        ldflags.addAll(listOf("-L${project.macosHostPlatformSdk!!}/usr/lib", "-lSystem"))
+    }
     target("libcallbacks.$solib", objSet) {
         tool("${platformManager.hostPlatform.clang.binDir}/clang++")
         flags("-shared",
-              "-L${project.macosHostPlatformSdk!!}/usr/lib", "-lSystem",
+              *ldflags.toTypedArray(),
               "-L${project(":kotlin-native:libclangext").buildDir}",
               "$hostLibffiDir/lib/libffi.a",
               "-lclangext",
