@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.metadata.ProtoBuf.Visibility
 import org.jetbrains.kotlin.metadata.ProtoBuf.Visibility.PRIVATE
 import org.jetbrains.kotlin.metadata.deserialization.Flags
 import org.jetbrains.kotlin.name.FqName
+import org.jetbrains.kotlin.resolve.sam.SAM_LOOKUP_NAME
 import org.jetbrains.kotlin.serialization.deserialization.getClassId
 
 //TODO Should be in gradle daemon so move it. Only for test here
@@ -39,7 +40,22 @@ class JarSnapshotDiffService() {
                             protoData.proto.typeTable, newProtoData.proto.typeTable
                         )
                         val diff = DifferenceCalculatorForClass(protoData, newProtoData).difference()
-//                            symbols.addAll(diff.changedMembersNames)
+
+                        if (diff.isClassAffected) {
+                            //TODO get cache to mark dirty all subtypes if subclass affected
+//                            val fqNames = if (!diff.areSubclassesAffected) listOf(fqName) else withSubtypes(fqName, caches)
+                            fqNames.add(fqName)
+                            assert(!fqName.isRoot) { "$fqName is root" }
+
+                            val scope = fqName.parent().asString()
+                            val name = fqName.shortName().identifier
+                            symbols.add(LookupSymbol(name, scope))
+                        }
+                        for (member in diff.changedMembersNames) {
+                            //TODO mark dirty symbols for subclasses
+                                symbols.add(LookupSymbol(member, fqName.asString()))
+                            symbols.add(LookupSymbol(SAM_LOOKUP_NAME.asString(), fqName.asString()))
+                        }
 
                     } else if (protoData is PackagePartProtoData && newProtoData is PackagePartProtoData) {
                         //TODO update it

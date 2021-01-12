@@ -56,25 +56,42 @@ class JarSnapshot(val protos: MutableMap<FqName, ProtoData>) {
                     is ClassProtoData -> {
                         writeBoolean(true) //TODO until PackageProto doesn't work
                         val nameResolver = protoData.nameResolver
-                        val (stringTable, qualifiedNameTable) =
+
                             when (nameResolver) {
-                                is NameResolverImpl -> Pair(nameResolver.strings, nameResolver.qualifiedNames)
+                                is NameResolverImpl -> {
+                                    JavaClassProtoMapValueExternalizer.save(
+                                        this,
+                                        SerializedJavaClass(protoData.proto, nameResolver.strings, nameResolver.qualifiedNames)
+                                    )
+                                }
                                 is JvmNameResolver -> {
                                     val stringTable = StringTableImpl()
                                     //TODO dirty hack
                                     repeat(nameResolver.strings.size) {
                                         val string = nameResolver.getString(it)
                                         stringTable.getStringIndex(string)
-                                        stringTable.getQualifiedClassNameIndex(string, nameResolver.isLocalClassName(it))
+//                                        stringTable.getQualifiedClassNameIndex(string, nameResolver.isLocalClassName(it))
                                     }
-                                    stringTable.buildProto()
+//                                    repeat(nameResolver.strings.size) {
+//                                        val string = nameResolver.getString(it)
+////                                        intern qualified class name caused intern into strings and ruin the order
+//                                        stringTable.getQualifiedClassNameIndex(string, nameResolver.isLocalClassName(it))
+//                                    }
+
+                                    val fqNameIndex = protoData.proto.fqName
+                                    val string = nameResolver.getString(fqNameIndex)
+                                    val newFqName = stringTable.getQualifiedClassNameIndex(string, nameResolver.isLocalClassName(fqNameIndex))
+                                    val (stringsTable, qualifiedNameTable) = stringTable.buildProto()
+
+                                    //TODO cause qualified indexes was updated protoData should be updated as well
+                                    val updatedProtoData = protoData.proto.toBuilder().setFqName(newFqName).build()
+                                    JavaClassProtoMapValueExternalizer.save(
+                                        this,
+                                        SerializedJavaClass(updatedProtoData, stringsTable, qualifiedNameTable)
+                                    )
                                 }
                                 else -> throw IllegalStateException("Can't store name resolver")
                             }
-                        JavaClassProtoMapValueExternalizer.save(
-                            this,
-                            SerializedJavaClass(protoData.proto, stringTable, qualifiedNameTable)
-                        )
                     }
                     is PackagePartProtoData -> {
                         writeBoolean(false)
