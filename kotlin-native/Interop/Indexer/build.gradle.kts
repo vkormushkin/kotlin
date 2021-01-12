@@ -125,8 +125,8 @@ native {
         tool(*platformManager.hostPlatform.clang.clangCXX("").toTypedArray())
         flags(
             "-shared",
-            *ldflags.toTypedArray(),
-            "-o", ruleOut(), *ruleInAll())
+            "-o", ruleOut(), *ruleInAll(),
+            *ldflags.toTypedArray())
     }
 }
 

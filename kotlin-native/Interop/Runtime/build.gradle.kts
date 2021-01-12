@@ -64,10 +64,10 @@ native {
     target("libcallbacks.$solib", objSet) {
         tool(*platformManager.hostPlatform.clang.clangCXX("").toTypedArray())
         flags("-shared",
+              "-o",ruleOut(), *ruleInAll(),
               "-L${project(":kotlin-native:libclangext").buildDir}",
               "$hostLibffiDir/lib/libffi.a",
-              "-lclangext",
-              "-o",ruleOut(), *ruleInAll())
+              "-lclangext")
     }
 }
 
