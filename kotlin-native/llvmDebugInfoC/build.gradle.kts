@@ -56,7 +56,7 @@ native {
   val objSet = sourceSets["main"]!!.transform(".cpp" to ".$obj")
 
   target("libdebugInfo.$lib", objSet) {
-    tool("ar")
+    tool(*platformManager.hostPlatform.clang.llvmAr("").toTypedArray())
     flags("-qv", ruleOut(), *ruleInAll())
   }
 }
