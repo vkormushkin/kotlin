@@ -31,7 +31,7 @@ native {
   val hostLibffiDir = rootProject.project(":kotlin-native").extra["${host}LibffiDir"]
   suffixes {
     (".cpp" to ".$obj") {
-      tool("${platformManager.hostPlatform.clang.binDir}/clang++")
+      tool("${platformManager.hostPlatform.clang.clangCXX("")[0]}")
       when (org.jetbrains.kotlin.konan.target.HostManager.host.family) {
         org.jetbrains.kotlin.konan.target.Family.LINUX -> {
           flags("-std=c++14", "-DKONAN_LINUX=1", "-D_GLIBCXX_USE_CXX11_ABI=0", "-I${llvmDir}/include", "-Isrc/main/include", "-fPIC", "-c", "-o", ruleOut(), ruleInFirst())

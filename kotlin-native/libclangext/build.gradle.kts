@@ -39,7 +39,7 @@ native {
     val lib = if (isWindows) "lib" else "a"
     suffixes {
         (".cpp" to ".$obj") {
-            tool("${platformManager.hostPlatform.clang.binDir}/clang++")
+            tool("${platformManager.hostPlatform.clang.clangCXX("")[0]}")
             when (org.jetbrains.kotlin.konan.target.HostManager.host.family) {
                 LINUX -> {
                     flags("--std=c++11", "-g", "-Isrc/main/include",
