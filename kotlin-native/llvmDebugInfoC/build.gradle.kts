@@ -32,7 +32,7 @@ native {
   val hostLibffiDir = rootProject.project(":kotlin-native").extra["${host}LibffiDir"]
   suffixes {
     (".cpp" to ".$obj") {
-      tool("${platformManager.hostPlatform.clang.clangCXX("")[0]}")
+      tool(*platformManager.hostPlatform.clang.clangCXX("").toTypedArray())
       when (org.jetbrains.kotlin.konan.target.HostManager.host.family) {
         org.jetbrains.kotlin.konan.target.Family.MINGW -> {
           flags("-std=c++14", "-I${llvmDir}/include", "-I${projectDir}/src/main/include",  "-c", "-o", ruleOut(), ruleInFirst())
@@ -41,7 +41,7 @@ native {
           flags("-std=c++14", "-I${llvmDir}/include", "-I${projectDir}/src/main/include", "-fPIC", "-c", "-o", ruleOut(), ruleInFirst())
         }
         org.jetbrains.kotlin.konan.target.Family.OSX -> {
-          flags("-std=c++14", "-I${llvmDir}/include", "-I${projectDir}/src/main/include", "-isysroot", project.macosHostPlatformSdk!!,
+          flags("-std=c++14", "-I${llvmDir}/include", "-I${projectDir}/src/main/include",
                 "-fPIC", "-c", "-o", ruleOut(), ruleInFirst())
         }
       }

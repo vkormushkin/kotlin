@@ -43,9 +43,6 @@ val cflags = mutableListOf( "-I$llvmDir/include",
         "-I${project(":kotlin-native:libclangext").projectDir.absolutePath}/src/main/include")
 
 val ldflags = mutableListOf("$llvmDir/$libclang", "-L${libclangextDir.absolutePath}", "-lclangext")
-if (HostManager.hostIsMac) {
-    ldflags.addAll(listOf("-L${project.macosHostPlatformSdk}/usr/lib", "-lSystem"))
-}
 
 if (libclangextIsEnabled) {
     assert(HostManager.hostIsMac)
@@ -82,7 +79,7 @@ native {
     val hostLibffiDir = rootProject.project(":kotlin-native").extra["${host}LibffiDir"]
     suffixes {
         (".c" to ".$obj") {
-            tool("${platformManager.hostPlatform.clang.clangC("")[0]}")
+            tool(*platformManager.hostPlatform.clang.clangC("").toTypedArray())
             when (org.jetbrains.kotlin.konan.target.HostManager.host.family) {
                 org.jetbrains.kotlin.konan.target.Family.LINUX -> {
                     flags(*cflags.toTypedArray(),  *platformManager.hostPlatform.clang.hostCompilerArgsForJni, "-fPIC", "-c", "-o", ruleOut(), ruleInFirst())
@@ -91,13 +88,13 @@ native {
                     flags(*cflags.toTypedArray(),  *platformManager.hostPlatform.clang.hostCompilerArgsForJni, "-c", "-o", ruleOut(), ruleInFirst())
                 }
                 org.jetbrains.kotlin.konan.target.Family.OSX -> {
-                    flags(*cflags.toTypedArray(), "-g", *platformManager.hostPlatform.clang.hostCompilerArgsForJni, "-isysroot", project.macosHostPlatformSdk!!,
+                    flags(*cflags.toTypedArray(), "-g", *platformManager.hostPlatform.clang.hostCompilerArgsForJni,
                           "-fPIC", "-c", "-o", ruleOut(), ruleInFirst())
                 }
             }
         }
         (".cpp" to ".$obj") {
-            tool("${platformManager.hostPlatform.clang.clangCXX("")[0]}")
+            tool(*platformManager.hostPlatform.clang.clangCXX("").toTypedArray())
             when (org.jetbrains.kotlin.konan.target.HostManager.host.family) {
                 org.jetbrains.kotlin.konan.target.Family.LINUX -> {
                     flags("-std=c++11",  *platformManager.hostPlatform.clang.hostCompilerArgsForJni, "-fPIC", "-c", "-o", ruleOut(), ruleInFirst())
@@ -106,7 +103,7 @@ native {
                     flags("-std=c++11",  *platformManager.hostPlatform.clang.hostCompilerArgsForJni, "-c", "-o", ruleOut(), ruleInFirst())
                 }
                 org.jetbrains.kotlin.konan.target.Family.OSX -> {
-                    flags("-std=c++11", "-g", *platformManager.hostPlatform.clang.hostCompilerArgsForJni, "-isysroot", project.macosHostPlatformSdk!!,
+                    flags("-std=c++11", "-g", *platformManager.hostPlatform.clang.hostCompilerArgsForJni,
                           "-fPIC", "-c", "-o", ruleOut(), ruleInFirst())
                 }
             }
@@ -125,7 +122,7 @@ native {
                          sourceSets["main-cpp"]!!.transform(".cpp" to ".$obj"))
 
     target("libclangstubs.$solib", *objSet) {
-        tool("${platformManager.hostPlatform.clang.clangCXX("")[0]}")
+        tool(*platformManager.hostPlatform.clang.clangCXX("").toTypedArray())
         flags(
             "-shared",
             *ldflags.toTypedArray(),

@@ -59,7 +59,7 @@ open class SourceSet(val sourceSets: SourceSets,
                         dependsOn(":kotlin-native:dependencies:update")
                     doLast {
                         val toolConfiguration = object : ToolPattern{
-                            var tool:String = ""
+                            var tool:Array<String> = emptyArray()
                             var args:Array<String> = emptyArray()
                             override fun ruleOut(): String = it.second.path
                             override fun ruleInFirst(): String = it.first.path
@@ -69,8 +69,8 @@ open class SourceSet(val sourceSets: SourceSets,
                                 this.args = arrayOf(*args)
                             }
 
-                            override fun tool(arg: String) {
-                                tool = arg
+                            override fun tool(vararg arg: String) {
+                                tool = arrayOf(*arg)
                             }
 
                             override fun env(name: String): Array<String> = emptyArray()
@@ -79,8 +79,8 @@ open class SourceSet(val sourceSets: SourceSets,
                         sourceSets.extension.toolPatterns[rule]!!.invoke(toolConfiguration)
                         it.second.parentFile.mkdirs()
                         sourceSets.project.exec {
-                            executable(toolConfiguration.tool)
-                            args(*toolConfiguration.args)
+                            executable(toolConfiguration.tool.first())
+                            args(*toolConfiguration.tool.drop(1).toTypedArray(), *toolConfiguration.args)
                         }
                     }
                 }
@@ -106,7 +106,7 @@ interface ToolPattern {
     fun ruleInFirst(): String
     fun ruleInAll(): Array<String>
     fun flags(vararg args: String): Unit
-    fun tool(arg: String): Unit
+    fun tool(vararg arg: String): Unit
     fun env(name: String): Array<String>
 }
 
@@ -139,8 +139,8 @@ open class NativeToolsExtension(val project:Project) {
             }
             val deps = objSet.flatMap{ it.collection.files }.map { it.path }
             val toolConfiguration = object : ToolPattern{
-                var tool:String = ""
-                var args:Array<String> = emptyArray()
+                var tool = emptyArray<String>()
+                var args = emptyArray<String>()
                 override fun ruleOut(): String = "${project.buildDir.path}/$name"
                 override fun ruleInFirst(): String = deps.first()
                 override fun ruleInAll(): Array<String> = deps.toTypedArray()
@@ -149,8 +149,8 @@ open class NativeToolsExtension(val project:Project) {
                     this.args = arrayOf(*args)
                 }
 
-                override fun tool(arg: String) {
-                    tool = arg
+                override fun tool(vararg arg: String) {
+                    tool = arrayOf(*arg)
                 }
                 override fun env(name: String): Array<String> = emptyArray()
             }
@@ -158,8 +158,8 @@ open class NativeToolsExtension(val project:Project) {
             doLast {
                 project.file(toolConfiguration.ruleOut()).parentFile.mkdirs()
                 sourceSets.project.exec {
-                    executable(toolConfiguration.tool)
-                    args(*toolConfiguration.args)
+                    executable(toolConfiguration.tool.first())
+                    args(*toolConfiguration.tool.drop(1).toTypedArray(), *toolConfiguration.args)
                 }
             }
         }

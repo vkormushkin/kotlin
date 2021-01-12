@@ -39,11 +39,12 @@ native {
     val lib = if (isWindows) "lib" else "a"
     suffixes {
         (".cpp" to ".$obj") {
-            tool("${platformManager.hostPlatform.clang.clangCXX("")[0]}")
+            tool(*platformManager.hostPlatform.clang.clangCXX("").toTypedArray())
             when (org.jetbrains.kotlin.konan.target.HostManager.host.family) {
                 LINUX -> {
                     flags("--std=c++11", "-g", "-Isrc/main/include",
                           "-I${project.findProperty("llvmDir")}/include", "-fPIC",
+                          "-DLLVM_DISABLE_ABI_BREAKING_CHECKS_ENFORCING=1",
                            "-c", "-o", ruleOut(), ruleInFirst())
                 }
                 MINGW -> {
@@ -52,13 +53,7 @@ native {
                            "-c", "-o", ruleOut(), ruleInFirst())
                 }
                 OSX -> {
-                    val out = ByteArrayOutputStream()
-                    project.exec {
-                        executable("xcrun")
-                        args("--show-sdk-path")
-                        this.standardOutput = out
-                    }
-                    flags("--std=c++11", "-g", "-isysroot", String(out.toByteArray()).trim(),
+                    flags("--std=c++11", "-g",
                           "-Isrc/main/include",
                           "-DLLVM_DISABLE_ABI_BREAKING_CHECKS_ENFORCING=1",
                           "-I${project.findProperty("llvmDir")}/include", "-fPIC", "-c", "-o", ruleOut(), ruleInFirst())

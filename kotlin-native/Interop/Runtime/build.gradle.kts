@@ -39,7 +39,7 @@ native {
     val hostLibffiDir = rootProject.project(":kotlin-native").extra["${host}LibffiDir"]
     suffixes {
         (".c" to ".$obj") {
-            tool("${platformManager.hostPlatform.clang.clangC("")[0]}")
+            tool(*platformManager.hostPlatform.clang.clangC("").toTypedArray())
             when (org.jetbrains.kotlin.konan.target.HostManager.host.family) {
                 org.jetbrains.kotlin.konan.target.Family.LINUX -> {
                     flags("-I$hostLibffiDir/include", *platformManager.hostPlatform.clang.hostCompilerArgsForJni, "-fPIC", "-c", "-o", ruleOut(), ruleInFirst())
@@ -48,7 +48,7 @@ native {
                     flags("-I$hostLibffiDir/include", *platformManager.hostPlatform.clang.hostCompilerArgsForJni, "-c", "-o", ruleOut(), ruleInFirst())
                 }
                 org.jetbrains.kotlin.konan.target.Family.OSX -> {
-                    flags("-I$hostLibffiDir/include", "-g", *platformManager.hostPlatform.clang.hostCompilerArgsForJni, "-isysroot", project.macosHostPlatformSdk!!,
+                    flags("-I$hostLibffiDir/include", "-g", *platformManager.hostPlatform.clang.hostCompilerArgsForJni,
                           "-fPIC", "-c", "-o", ruleOut(), ruleInFirst())
                 }
             }
@@ -61,14 +61,9 @@ native {
     }
     val objSet = sourceSets["callbacks"]!!.transform(".c" to ".$obj")
 
-    val ldflags = mutableListOf<String>()
-    if (org.jetbrains.kotlin.konan.target.HostManager.hostIsMac) {
-        ldflags.addAll(listOf("-L${project.macosHostPlatformSdk!!}/usr/lib", "-lSystem"))
-    }
     target("libcallbacks.$solib", objSet) {
-        tool("${platformManager.hostPlatform.clang.clangCXX("")[0]}")
+        tool(*platformManager.hostPlatform.clang.clangCXX("").toTypedArray())
         flags("-shared",
-              *ldflags.toTypedArray(),
               "-L${project(":kotlin-native:libclangext").buildDir}",
               "$hostLibffiDir/lib/libffi.a",
               "-lclangext",
