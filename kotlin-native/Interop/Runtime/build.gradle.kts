@@ -35,6 +35,7 @@ val solib = when {
 native {
     val isWindows = PlatformInfo.isWindows()
     val obj = if (isWindows) "obj" else "o"
+    val lib = if (isWindows) "lib" else "a"
     val host = rootProject.project(":kotlin-native").extra["hostName"]
     val hostLibffiDir = rootProject.project(":kotlin-native").extra["${host}LibffiDir"]
     suffixes {
@@ -66,8 +67,11 @@ native {
         flags("-shared",
               "-o",ruleOut(), *ruleInAll(),
               "-L${project(":kotlin-native:libclangext").buildDir}",
-              "$hostLibffiDir/lib/libffi.a",
+              "$hostLibffiDir/lib/libffi.$lib",
               "-lclangext")
+    }
+    tasks["libcallbacks.$solib"].apply {
+        dependsOn(":kotlin-native:libclangext:libclangext.$lib")
     }
 }
 
