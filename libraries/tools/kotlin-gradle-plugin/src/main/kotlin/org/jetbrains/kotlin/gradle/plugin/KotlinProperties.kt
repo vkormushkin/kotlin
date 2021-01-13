@@ -196,13 +196,13 @@ internal class PropertiesProvider private constructor(private val project: Proje
         get() = property("kotlin.commonizer.jvmArgs")
 
     /**
-     * Dependencies caching strategy. The default is static.
+     * Dependencies caching strategy for all targets that support caches.
      */
     val nativeCacheKind: NativeCacheKind?
         get() = property("kotlin.native.cacheKind")?.let { NativeCacheKind.byCompilerArgument(it) }
 
     /**
-     * TODO:
+     * Dependencies caching strategy for [target].
      */
     fun nativeCacheKindForTarget(target: KonanTarget): NativeCacheKind? =
         property("kotlin.native.cacheKind.${target.name}")?.let { NativeCacheKind.byCompilerArgument(it) }

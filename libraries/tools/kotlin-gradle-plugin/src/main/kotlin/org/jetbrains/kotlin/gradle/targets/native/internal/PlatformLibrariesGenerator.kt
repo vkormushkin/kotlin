@@ -38,6 +38,7 @@ internal class PlatformLibrariesGenerator(val project: Project, val konanTarget:
     private val cacheKind: NativeCacheKind by lazy {
         project.getKonanCacheKind(konanTarget)
     }
+
     private val shouldBuildCaches: Boolean =
         CacheBuilder.cacheWorksFor(konanTarget, project) && cacheKind != NativeCacheKind.NONE
 

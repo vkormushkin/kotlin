@@ -904,8 +904,8 @@ internal class CacheBuilder(val project: Project, val binary: NativeBinary, val 
                 .resolvablePropertyList("cacheableTargets", HostManager.hostName)
                 .map { KonanTarget.predefinedTargets.getValue(it) }
 
-        // Targets that have well-tested static caches
-        // that can be enabled by default.
+        // Targets with well-tested static caches that can be enabled by default.
+        // TODO: Move it to konan.properties.
         private val targetsWithStableStaticCaches =
             setOf(KonanTarget.IOS_X64, KonanTarget.MACOS_X64)
 
