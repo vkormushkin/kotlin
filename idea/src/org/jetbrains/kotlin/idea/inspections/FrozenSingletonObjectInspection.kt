@@ -9,14 +9,13 @@ import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
-import org.jetbrains.kotlin.psi.KtObjectDeclaration
-import org.jetbrains.kotlin.psi.KtProperty
-import org.jetbrains.kotlin.psi.KtVisitorVoid
+import com.intellij.psi.PsiExpression
 import com.intellij.psi.search.searches.ReferencesSearch
+import com.intellij.psi.util.PsiTreeUtil
 import org.jetbrains.kotlin.idea.KotlinBundle
 import org.jetbrains.kotlin.idea.references.KtSimpleNameReference
 import org.jetbrains.kotlin.idea.references.readWriteAccess
-import org.jetbrains.kotlin.psi.KtOperationExpression
+import org.jetbrains.kotlin.psi.*
 
 class FrozenSingletonObjectInspection : AbstractKotlinInspection() {
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor {
@@ -37,12 +36,13 @@ class FrozenSingletonObjectInspection : AbstractKotlinInspection() {
                 //Find property declarations
                 val vars = declaration.declarations.mapNotNull { it -> it as? KtProperty }
                 //Find mutations
-                val references = vars.flatMap { ReferencesSearch.search(it, declaration.resolveScope) }
-                val mutatedReferences = references.filter {
-                    (it as? KtSimpleNameReference)?.element?.readWriteAccess(useResolveForReadWrite = true)?.isWrite == true
-                }
-
-                val mutatingExpressions = references.map { parentOperation(it.element) }
+                val mutatingExpressions = vars.flatMap {
+                    ReferencesSearch.search(it, declaration.resolveScope)
+                }.mapNotNull {
+                    PsiTreeUtil.getTopmostParentOfType(it.element, KtDotQualifiedExpression::class.java) ?: it.element
+                }.filter {
+                    (it as? KtExpression)?.readWriteAccess(useResolveForReadWrite = true)?.isWrite == true
+                }.map { parentOperation(it) }
 
                 val problems = mutatingExpressions.map { it ->
                     holder.manager.createProblemDescriptor(
@@ -68,11 +68,8 @@ class FrozenSingletonObjectInspection : AbstractKotlinInspection() {
 
             //Look up for reference operation to highlight it
             private fun parentOperation(element: PsiElement): PsiElement {
-                val parent = element.parent
-                if (parent == null || element is KtOperationExpression) {
-                    return element
-                }
-                return parentOperation(parent)
+                val parent = PsiTreeUtil.getParentOfType(element, KtOperationExpression::class.java)
+                return parent ?: element
             }
         }
     }
