@@ -33,18 +33,16 @@ class FrozenSingletonObjectInspection : AbstractKotlinInspection() {
                     return
                 }
 
-                //Find property declarations
-                val vars = declaration.declarations.mapNotNull { it -> it as? KtProperty }
                 //Find mutations
-                val mutatingExpressions = vars.flatMap {
+                declaration.declarations.mapNotNull { it -> it as? KtProperty }.flatMap {
                     ReferencesSearch.search(it, declaration.resolveScope)
                 }.mapNotNull {
                     PsiTreeUtil.getTopmostParentOfType(it.element, KtDotQualifiedExpression::class.java) ?: it.element
                 }.filter {
                     (it as? KtExpression)?.readWriteAccess(useResolveForReadWrite = true)?.isWrite == true
-                }.map { parentOperation(it) }
-
-                val problems = mutatingExpressions.map { it ->
+                }.map {
+                    PsiTreeUtil.getParentOfType(it, KtOperationExpression::class.java) ?: it
+                }.map {
                     holder.manager.createProblemDescriptor(
                         it,
                         KotlinBundle.message("objects.are.frozen.by.default.and.its.mutation.causes.exception"),
@@ -53,10 +51,8 @@ class FrozenSingletonObjectInspection : AbstractKotlinInspection() {
                         isOnTheFly,
                         false
                     )
-                }
-
-                for (p in problems) {
-                    holder.registerProblem(p)
+                }.forEach {
+                    holder.registerProblem(it)
                 }
             }
 
@@ -64,12 +60,6 @@ class FrozenSingletonObjectInspection : AbstractKotlinInspection() {
             private fun isNative(): Boolean {
                 //FIXME: add a real check for native environment
                 return true;
-            }
-
-            //Look up for reference operation to highlight it
-            private fun parentOperation(element: PsiElement): PsiElement {
-                val parent = PsiTreeUtil.getParentOfType(element, KtOperationExpression::class.java)
-                return parent ?: element
             }
         }
     }
